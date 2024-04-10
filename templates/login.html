@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+</head>
+<body>
+    <div>
+        <h2>Login</h2>
+        {% if success_message %}
+            <div class="success-message">{{ success_message}}</div>
+        {% endif %}
+        <form action="/login" method="post">
+            <input type="email" name="email" placeholder="Email" required>
+            <div id="invalidEmail"></div>
+            <input type="password" name="password" placeholder="Password" required>
+            <div id="invalidPassword"></div>
+            <input type="submit" value="Login">
+            <div class="status" id="status"></div>
+        </form>
+        <h2>Don't have an account?</h2>
+        <span>
+        <form action="/register" method="GET">
+            <button type="submit">Sign Up</button>
+        </form>
+        </span>
+    </div>
+</body>
+
+</html>
