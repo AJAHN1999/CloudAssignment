@@ -1,9 +1,13 @@
 import boto3 
 from flask import Flask, jsonify
+from botocore.exceptions import ClientError
 
 dynamodb = boto3.resource('dynamodb',region_name="us-east-1") 
 loginTable = dynamodb.Table('login')
 musicTable = dynamodb.Table('music')
+s3_resource = boto3.resource('s3')
+bucket_name = 's3987749images'
+s3_client = boto3.client('s3')
 
 
 
@@ -83,6 +87,22 @@ def createQuery(musicDetails):
     return query ,expression_attribute_values, expression_attribute_names
 
     
+#helps generate presigned URLs to grant access to private images in the s3 bucket- s3987749images
+def genPresignedUrl(bucket_name,object_key,expiration=3600):
+    try:
+        response = s3_client.generate_presigned_url('get_object', Params={'Bucket':bucket_name,'Key':object_key},ExpiresIn = expiration)
+    except ClientError as e:
+        return None
+    return response
+
+
+def addImages(musicList):
+    for everySong in musicList:
+        object_key = everySong['artist']+'.jpg'
+        imgURL = genPresignedUrl(bucket_name,object_key)
+        if(imgURL!= None):
+            everySong['image_url']=imgURL
+    return musicList
 
 
 
@@ -98,9 +118,16 @@ def fetchMusic(musicDetails):
             scan_params["ExpressionAttributeNames"] = expression_attribute_names
         
         response = musicTable.scan(**scan_params)
-        return response['Items']
+        musicList = response['Items'] #list of dictionaries
+        return addImages(musicList)  #adds corresponding images by generating presigned URLs to the recieved query results
     else:
         return None
+
+
+
+
+
+
         
     
     
