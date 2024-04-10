@@ -15,7 +15,8 @@ def downloadImages( imageURL,filename):
 def retrieveImages():
     songs = useJSON()
     for id, everySong in enumerate(songs['songs']):
-        downloadImages(everySong['img_url'],f'image_{id}.jpg')
+        filename = everySong['artist'] + ".jpg"
+        downloadImages(everySong['img_url'],filename)
 
 if not os.path.exists('images'):
     retrieveImages()

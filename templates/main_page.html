@@ -8,15 +8,60 @@
 <body>
     <div id="user-area">
         <!-- User area content goes here -->
+        <h2>Welcome, {{ user_email }}!</h2>
+        <a href="/logout">Logout</a>
     </div>
     <div id="subscription-area">
-        <!-- Subscription area content goes here -->
+        Subscription area content goes here
+        <h3>Your Subscriptions</h3>
+        {% if subscriptions %}
+            {% for song in subscriptions %}
+            <div>
+                <p>Title: {{ song.title }}</p>
+                <p>Artist: {{ song.artist }}</p>
+                <p>Year: {{ song.year }}</p>
+                <img src="{{ song.image_url }}" alt="{{ song.title }}" width="100">
+                Assuming each song has a unique identifier (song.id)
+                <form action="/remove_subscription" method="post">
+                    <input type="hidden" name="song_id" value="{{ song.id }}">
+                    <button type="submit">Remove</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No subscriptions yet.</p>
+        {% endif %}
     </div>
     <div id="query-area">
-        <!-- Query area content goes here -->
-    </div>
-    <div>
-        <a href="/logout">Logout</a>
+        Query area content goes here
+        <h3>Find Music</h3>
+        <form action="/query_music" method="post">
+            Title: <input type="text" name="title"><br>
+            Year: <input type="text" name="year"><br>
+            Artist: <input type="text" name="artist"><br>
+            <button type="submit">Query</button>
+        </form>
+        {% if query_results %}
+            <div>
+                <h4>Results</h4>
+                {% for result in query_results %}
+                <div>
+                    <p>Title: {{ result.title }}</p>
+                    <p>Artist: {{ result.artist }}</p>
+                    <p>Year: {{ result.year }}</p>
+                    <!-- <img src="{{ result.image_url }}" alt="{{ result.title }}" width="100"> -->
+                    <form action="/subscribe" method="post">
+                        <input type="hidden" name="song_id" value="{{ result.id }}">
+                        <button type="submit">Subscribe</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div>
+                <p>No results found.</p>
+            </div>
+        {% endif %}
     </div>
 </body>
 </html>
