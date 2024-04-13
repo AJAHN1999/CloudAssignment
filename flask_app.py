@@ -65,7 +65,10 @@ def main_page():
     user_email = session.get('user_email', 'Guest')
     # Fetch user-specific data using user details stored in session
     # Render the main page with user details and other required information
-    return render_template('main_page.html', user_email=user_email)
+    currentSubscriptions = fetchSubscriptions(user_email)
+    session['subscriptions'] = currentSubscriptions
+    # print(currentSubscriptions)
+    return render_template('main_page.html', user_email=user_email,subscriptions = currentSubscriptions)
 
 
 #logout route
@@ -79,11 +82,28 @@ def logout():
 
 #query music
 @app.route('/query_music', methods = ['GET','POST'])
+@login_required
 def queryMusic():
     musicQuery = request.form
     musicList = fetchMusic(musicQuery)
-    return render_template('main_page.html',user_email = session.get('user_email','Guest'),query_results = musicList)
+    return render_template('main_page.html',user_email = session.get('user_email','Guest'),query_results = musicList,subscriptions= session.get('subscriptions') )
 
+
+@app.route('/subscribe', methods = ['GET','POST'])
+def subscribe():
+    subscribedSong = request.form
+    isAdded = addToSubscribedMusic(session.get('user_email','Guest'),subscribedSong)
+    if isAdded:
+        return redirect(url_for('main_page'))
+    
+@app.route('/remove_subscription',methods=['GET','POST'])
+def unsubscribe():
+    unsubscribedSong = request.form
+    print(unsubscribedSong)
+    isRemoved = removeFromSubMusic(session.get('user_email','Guest'),unsubscribedSong)
+    if isRemoved:
+        return redirect(url_for('main_page'))
+    
 
 
 

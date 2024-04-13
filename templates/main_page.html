@@ -17,13 +17,12 @@
         {% if subscriptions %}
             {% for song in subscriptions %}
             <div>
-                <p>Title: {{ song.title }}</p>
+                <p>Title: {{ song.music_title }}</p>
                 <p>Artist: {{ song.artist }}</p>
-                <p>Year: {{ song.year }}</p>
-                <img src="{{ song.image_url }}" alt="{{ song.title }}" width="100">
-                Assuming each song has a unique identifier (song.id)
+                <p>Year: {{ song.yearr }}</p>
+                <img src="{{ song.image }}" alt="{{ song.music_title }}" width="100">
                 <form action="/remove_subscription" method="post">
-                    <input type="hidden" name="song_id" value="{{ song.id }}">
+                    <input type="hidden" name="song_title" value="{{ song.music_title }}">
                     <button type="submit">Remove</button>
                 </form>
             </div>
@@ -33,7 +32,6 @@
         {% endif %}
     </div>
     <div id="query-area">
-        Query area content goes here
         <h3>Find Music</h3>
         <form action="/query_music" method="post">
             Title: <input type="text" name="title"><br>
@@ -51,7 +49,10 @@
                     <p>Artist: {{ result.artist }}</p>
                     <p>Year: {{ result.year }}</p>   
                     <form action="/subscribe" method="post">
-                        <input type="hidden" name="song_id" value="{{ result.id }}">
+                        <input type="hidden" name="song_title" value="{{ result.title }}">
+                        <input type="hidden" name="song_artist" value="{{ result.artist }}">
+                        <input type="hidden" name="song_year" value="{{ result.year }}">
+                        <input type="hidden" name="song_imgURL" value="{{ result.image_url }}">
                         <button type="submit">Subscribe</button>
                     </form>
                 </div>

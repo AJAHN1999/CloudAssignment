@@ -8,10 +8,7 @@ musicTable = dynamodb.Table('music')
 s3_resource = boto3.resource('s3')
 bucket_name = 's3987749images'
 s3_client = boto3.client('s3')
-
-
-
-
+subscriptionTable = dynamodb.Table('subscriptions')
 
 
 def login(request):
@@ -123,6 +120,48 @@ def fetchMusic(musicDetails):
     else:
         return None
 
+# def checkSubscription(username):
+#     if getItem(subscriptionTable,username):
+#         return True
+#     else:
+#         return False
+    
+def addToSubscribedMusic(email,songInfo):
+    response = subscriptionTable.put_item(
+        Item={
+            'email': email,
+            'music_title':songInfo.get('song_title'),
+            'image':songInfo.get('song_imgURL'),
+            'yearr':songInfo.get('song_year'),
+            'artist':songInfo.get('song_artist')
+        }
+    )
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return True
+    else:
+        return False
+
+def fetchSubscriptions(email):
+    response = subscriptionTable.query(
+        KeyConditionExpression='email = :email',
+        ExpressionAttributeValues={
+                ':email': email
+            }
+    )
+    return response['Items']
+
+
+def removeFromSubMusic(email,songInfo):
+    response = subscriptionTable.delete_item(
+        Key={
+            'email': email,
+            'music_title': songInfo.get('song_title')
+        }
+    )
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return True
+    else:
+        return False
 
 
 
