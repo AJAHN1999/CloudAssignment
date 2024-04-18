@@ -25,7 +25,7 @@
                             <img src="{{ song.image }}" class="card-img-top" alt="{{ song.music_title }}" style="height: 200px; object-fit: cover;">
                             <div class="card-body">
                                 <h5 class="card-title">{{ song.music_title }}</h5>
-                                <p class="card-text">{{ song.artist }} - {{ song.year }}</p>
+                                <p class="card-text">{{ song.artist }} - {{ song.yearr }}</p>
                                 <form action="/remove_subscription" method="post">
                                     <input type="hidden" name="song_title" value="{{ song.music_title }}">
                                     <button type="submit" class="btn btn-danger">Remove</button>

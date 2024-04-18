@@ -17,18 +17,19 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@app.route("/",methods=['GET'])
+def redirectToLogin():
+    return render_template('login.html',success_message = 'Welcome' )
 
 #default route
 @app.route("/login",methods=['GET','POST'])
 def loginPage():
-    # Retrieve success message from query parameters, or use default value if not provided
+    # Retrieve success message from query parameters, default value if not provided
     if request.method == 'GET':
         success_message = request.args.get('success_message', 'Welcome!')
         return render_template('login.html',success_message=success_message)
     elif request.method == 'POST':
         response, user = login(request)
-        print(user)
-        print(response)
         if user:
             session['user_email'] = user.get('email') # Storing the user identifier in session
             return redirect(url_for('main_page'))
@@ -104,6 +105,5 @@ def unsubscribe():
     if isRemoved:
         return redirect(url_for('main_page'))
     
-
-
-
+if __name__ == '__main__':
+    app.run()
