@@ -1,10 +1,12 @@
 from flask import Flask, request, session, render_template,redirect,url_for
 from dbOperations import *
 from functools import wraps
-
+import requests
+import json
 
 app = Flask(__name__)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+API_KEY = "https://cb3ua87b6f.execute-api.us-east-1.amazonaws.com/Production"
 
 
 
@@ -29,12 +31,25 @@ def loginPage():
         success_message = request.args.get('success_message', 'Welcome!')
         return render_template('login.html',success_message=success_message)
     elif request.method == 'POST':
-        response, user = login(request)
-        if user:
-            session['user_email'] = user.get('email') # Storing the user identifier in session
-            return redirect(url_for('main_page'))
+        api_url = f'{API_KEY}/lambda_loginUser'
+        email = request.form['email']
+        password = request.form['password']
+        response = requests.post(api_url, json={'email':email,'password':password})
+        
+        if response.status_code == 200:
+            data = response.json()
+            body = json.loads(data['body'])
+            if 'user' in body.keys():
+                  # Extract user information if needed)
+                session['user_email'] = body['user']['email']  # Storing the user identifier in session
+                return redirect(url_for('main_page'))
+            else:
+                return redirect(url_for('loginPage',success_message=body['message']))
         else:
-            return redirect(url_for('loginPage',success_message= response.get_json()['message']))
+            message = response.json()['message']
+            return redirect(url_for('loginPage', success_message=message))
+
+
 
         
 # register new user
@@ -44,18 +59,18 @@ def registerUser():
         return render_template('register_page.html')
     if request.method == 'POST':
         registrationData = request.form
-        result = validateUser(registrationData)
-        if 'Item' not in  result:
-            if(addUser(registrationData)):
-                #return jsonify({'message':'User added to DB'}),200
-                 # Redirect to login page with a success message
-                return redirect(url_for('loginPage', success_message='User added successfully'))
-            else:
-                # return jsonify({'message':'something went wrong'})
-                return redirect(url_for('loginPage', success_message='something went wrong'))
+        print(registrationData)
+        api_url = f'{API_KEY}/lambda_addUser'
+        print(registrationData.get('email'))
+        response = requests.post(api_url, json={'email':registrationData.get('email'),'password':registrationData.get('password'),'username':registrationData.get('username')})
+        print(f'response is {response.json()}')
+        if response.status_code==200:
+            response_data = response.json()  # Parse JSON response
+            body = json.loads(response_data['body'])
+            
+            return redirect(url_for('loginPage', success_message=body['message']))
         else:
-            return redirect(url_for('loginPage', success_message='email already exists'))
-            #return jsonify({'message':'user with this email already exists'}),200
+            return redirect(url_for('loginPage', success_message='something went wrong'))
 
 
 
@@ -66,10 +81,16 @@ def main_page():
     user_email = session.get('user_email', 'Guest')
     # Fetch user-specific data using user details stored in session
     # Render the main page with user details and other required information
-    currentSubscriptions = fetchSubscriptions(user_email)
-    session['subscriptions'] = currentSubscriptions
-    # print(currentSubscriptions)
-    return render_template('main_page.html', user_email=user_email,subscriptions = currentSubscriptions)
+    #currentSubscriptions = fetchSubscriptions(user_email)
+    api_url = f'{API_KEY}/lambda_fetchSub'
+    response = requests.post(api_url, json={'email':user_email})
+    if response.status_code == 200:
+        data = response.json()
+        body = json.loads(data['body'])
+        session['subscriptions'] = body['subscriptions']
+        return render_template('main_page.html', user_email=user_email,subscriptions = session['subscriptions'])
+    else:
+        return redirect(url_for('loginPage', success_message='something went wrong'))
 
 
 #logout route
@@ -86,24 +107,43 @@ def logout():
 @login_required
 def queryMusic():
     musicQuery = request.form
-    musicList = fetchMusic(musicQuery)
-    return render_template('main_page.html',user_email = session.get('user_email','Guest'),query_results = musicList,subscriptions= session.get('subscriptions') )
+    non_empty_data = {}
+    # Iterate over each item in the ImmutableMultiDict
+    for key, value in musicQuery.items():
+        if value:  # Checks if value is not empty
+            non_empty_data[key] = value
+    api_url = f'{API_KEY}/lambda_fetchMusic'
+    response = requests.post(api_url, json=non_empty_data)
+    if response.status_code == 200:
+        data = response.json()
+        if 'body' in data:
+            body = json.loads(data['body'])
+            print(body)
+        # Access the music list
+            music_list = body['musicList']
+    # musicList = fetchMusic(musicQuery)
+            return render_template('main_page.html',user_email = session.get('user_email','Guest'),query_results = music_list,subscriptions= session.get('subscriptions') )
+        else:
+            return render_template('main_page.html',user_email = session.get('user_email','Guest'),query_results = [],subscriptions= session.get('subscriptions') )
 
 
 @app.route('/subscribe', methods = ['GET','POST'])
 def subscribe():
     subscribedSong = request.form
-    isAdded = addToSubscribedMusic(session.get('user_email','Guest'),subscribedSong)
-    if isAdded:
+    api_url = f'{API_KEY}/lambda_addSubscribedMusic'
+    response = requests.post(api_url, json={'email':session.get('user_email','Guest'),'songInfo':subscribedSong.to_dict()})
+    if response.status_code == 200:
         return redirect(url_for('main_page'))
+
     
 @app.route('/remove_subscription',methods=['GET','POST'])
 def unsubscribe():
     unsubscribedSong = request.form
-    print(unsubscribedSong)
-    isRemoved = removeFromSubMusic(session.get('user_email','Guest'),unsubscribedSong)
-    if isRemoved:
+    api_url = f'{API_KEY}/lambda_unsubscribe'
+    response = requests.post(api_url, json={'email':session.get('user_email','Guest'),'songInfo':unsubscribedSong.to_dict()})
+    if response.status_code == 200:
         return redirect(url_for('main_page'))
+
     
 if __name__ == '__main__':
     app.run()
